@@ -1,0 +1,15 @@
+version: '3'
+services:
+    rabbitmq:
+        image: 'rabbitmq:3-management'
+        container_name: rabbitmq
+        hostname: "rabbitmq"
+        ports:
+            - 5672:5672
+            - 15672:15672
+        volumes:
+            #- rabbitmq-data:/var/lib/rabbitmq/
+            - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+            - ./definitions.json:/etc/rabbitmq/definitions.json:ro
+volumes: 
+  rabbitmq-data:

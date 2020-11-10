@@ -1,10 +1,8 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
-using RabbitMQ.Client;
-
 namespace Mirero.RabbitMQ.Extensions.DependencyInjection
 {
+    using System;
+    using global::RabbitMQ.Client;
+
     public class MQDeclares
     {
         public MQDeclares(Action<IModel> action) => Action = action;

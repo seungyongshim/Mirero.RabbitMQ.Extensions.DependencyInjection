@@ -1,29 +1,31 @@
-using System;
-using System.Text;
-using System.Threading;
-using System.Threading.Channels;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using Mirero.RabbitMQ.Extensions.DependencyInjection.Abstractions;
-using Newtonsoft.Json;
-using RabbitMQ.Client;
-using RabbitMQ.Client.Events;
-
 namespace Mirero.RabbitMQ.Extensions.DependencyInjection
 {
+    using System;
+    using System.Text;
+    using System.Threading;
+    using System.Threading.Channels;
+    using System.Threading.Tasks;
+    using Microsoft.Extensions.Logging;
+    using Microsoft.Extensions.DependencyInjection;
+    using Mirero.RabbitMQ.Extensions.DependencyInjection.Abstractions;
+    using Newtonsoft.Json;
+    using global::RabbitMQ.Client;
+    using global::RabbitMQ.Client.Events;
+
     public class MQChannel : IMQChannel
     {
         private bool disposedValue = false;
+        private IModel _model;
 
-        public MQChannel(IModel model, ILogger<MQChannel> logger)
+        public MQChannel(IServiceProvider serviceProvider, ILogger<MQChannel> logger)
         {
-            Model = model;
+            ServiceProvider = serviceProvider;
             Logger = logger;
         }
 
-        public IModel Model { get; }
+        public IModel Model => _model ?? ServiceProvider.GetService<IModel>();
+        public IServiceProvider ServiceProvider { get; }
         public ILogger<MQChannel> Logger { get; }
-        public Lazy<IAsyncBasicConsumer> Consumer { get; }
 
         public void Dispose()
         {
@@ -33,16 +35,15 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
 
         public async Task<T> ReceiveAsync<T>(string topic, CancellationToken ct)
         {
-            Model.BasicQos(0, 1, false);
-
-            var consumer = new EventingBasicConsumer(Model);
-            Model.BasicConsume(topic, false, consumer);
-
             var ch = Channel.CreateUnbounded<string>();
+            var consumer = new AsyncEventingBasicConsumer(Model);
+            consumer.Received += Consumer_Received;
 
             try
             {
-                consumer.Received += Consumer_Received;
+                Model.BasicQos(0, 1, false);
+                Model.BasicConsume(topic, false, consumer);
+                
                 var rawMessage = await ch.Reader.ReadAsync(ct);
 
                 var result = JsonConvert.DeserializeObject<T>(rawMessage, new JsonSerializerSettings
@@ -51,28 +52,29 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
                 });
                 return result;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Logger.LogError(ex, "");
+                _model = null;
             }
             finally
             {
                 consumer.Received -= Consumer_Received;
             }
 
-            return default(T);
+            return default;
 
-            async void Consumer_Received(object sender, BasicDeliverEventArgs e)
+            async Task Consumer_Received(object sender, BasicDeliverEventArgs e)
             {
                 try
                 {
                     //.Net5 전환시 ToArray를 Span으로 수정할 것
-                    var rawMessage = Encoding.UTF8.GetString(e.Body.ToArray()); 
-                    await ch.Writer.WriteAsync(rawMessage);
+                    var rawMessage = Encoding.UTF8.GetString(e.Body.ToArray());
+                    await ch.Writer.WriteAsync(rawMessage).ConfigureAwait(false);
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
-                    ch.Writer.TryComplete(ex);
+                    ch.Writer.Complete(ex);
                 }
             }
         }
@@ -80,9 +82,20 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
         public void Send(string topic, object message, string topicType)
         {
             var body = Encoding.UTF8.GetBytes(JsonSerialize(message));
-            var properties = MessageExpiration(Model);
+            var props = Model.CreateBasicProperties();
+                props.ContentType = "application/json";
+                props.DeliveryMode = 1;
+                props.Expiration = "100000";
 
-            Model.BasicPublish(exchange: "", routingKey: topic, basicProperties: properties, body: body);
+            try
+            {
+                Model.BasicPublish("", topic, props, body);
+            }
+            catch(Exception ex)
+            {
+                Logger.LogError(ex, "");
+                _model = null;
+            }
         }
 
         protected virtual void Dispose(bool disposing)
@@ -110,17 +123,9 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
             }
             catch (Exception ex)
             {
+                Logger.LogError(ex, "");
                 return null;
             }
-        }
-
-        private IBasicProperties MessageExpiration(IModel model)
-        {
-            var props = model.CreateBasicProperties();
-            props.ContentType = "application/json";
-            props.DeliveryMode = 1;
-            //props.Expiration = "100000";
-            return props;
         }
     }
 }
