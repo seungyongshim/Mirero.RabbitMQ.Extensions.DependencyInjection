@@ -9,14 +9,14 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
 {
     public class MQRpc : IMQRpc
     {
-        public MQRpc(IMQSender sender, IMQReceiver receiver, ILogger<MQRpc> logger)
+        public MQRpc(IMQPublisher sender, IMQReceiver receiver, ILogger<MQRpc> logger)
         {
             Sender = sender;
             Receiver = receiver;
             Logger = logger;
         }
 
-        public IMQSender Sender { get; }
+        public IMQPublisher Sender { get; }
         public IMQReceiver Receiver { get; }
         public ILogger<MQRpc> Logger { get; }
 

@@ -22,7 +22,7 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection.Tests
                 {
                     services.AddRabbitMQ(model =>
                     {
-                        model.QueueDeclare("mls.test.test1.consumer1", false, false, true, null);
+                        model.QueueDeclare("rmq.test.test1", false, false, true, null);
                     });
                 });
 
@@ -30,17 +30,17 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection.Tests
 
             host.Start();
 
-            using (var channel = host.Services.GetService<IMQSender>())
+            using (var sender = host.Services.GetService<IMQPublisher>())
             using (var cts = new CancellationTokenSource())
             {
-                channel.Tell("mls.test.test1.consumer1", "Hello");
+                sender.Tell("rmq.test.test1", "Hello");
             }
 
-            using (var channel = host.Services.GetService<IMQSender>())
+            using (var receiver = host.Services.GetService<IMQReceiver>())
             using (var cts = new CancellationTokenSource())
             {
-                cts.CancelAfter(555.Seconds());
-                var message = await channel.ReceiveAsync<string>("mls.test.test1.consumer1", cts.Token);
+                receiver.Start("rmq.test.test1");
+                var message = await receiver.ReceiveAsync<string>(5.Seconds());
                 message.Should().Be("Hello");
             }
 

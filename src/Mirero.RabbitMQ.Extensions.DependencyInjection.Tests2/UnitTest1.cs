@@ -28,7 +28,7 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection.Tests2
 
             await host.StartAsync();
 
-            using (var channel = host.Services.GetService<IMQSender>())
+            using (var channel = host.Services.GetService<IMQPublisher>())
             {
                 channel.Tell("mls.test.testservice", new[] { "Hello", "World" });
                 channel.Tell("mls.test.testservice", new TestMessage("Hello"));

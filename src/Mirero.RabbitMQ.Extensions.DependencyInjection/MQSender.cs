@@ -2,25 +2,23 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
 {
     using System;
     using System.Text;
-    using System.Threading;
-    using System.Threading.Channels;
-    using System.Threading.Tasks;
-    using Microsoft.Extensions.Logging;
+    using global::RabbitMQ.Client;
     using Microsoft.Extensions.DependencyInjection;
+    using Microsoft.Extensions.Logging;
     using Mirero.RabbitMQ.Extensions.DependencyInjection.Abstractions;
     using Newtonsoft.Json;
-    using global::RabbitMQ.Client;
-    using global::RabbitMQ.Client.Events;
 
-    public class MQSender : IMQSender
+    public class MQPublisher : IMQPublisher
     {
         private IModel _model;
 
-        public MQSender(IServiceProvider serviceProvider, ILogger<MQSender> logger)
+        public MQPublisher(IServiceProvider serviceProvider, ILogger<MQPublisher> logger)
         {
             ServiceProvider = serviceProvider;
             Logger = logger;
         }
+
+        public ILogger<MQPublisher> Logger { get; }
 
         public IModel Model
         {
@@ -30,54 +28,55 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
                 {
                     _model = ServiceProvider.GetService<IModel>();
                     _model.BasicQos(0, 1, false);
+                    var props = Model.CreateBasicProperties();
+                        props.ContentType = "application/json";
+                        props.DeliveryMode = 1;
+                        props.Expiration = "1800000";
+                    Props = props;
                 }
 
                 return _model;
             }
         }
+
         public IServiceProvider ServiceProvider { get; }
-        public ILogger<MQSender> Logger { get; }
+        public IBasicProperties Props { get; private set; }
 
         public void Tell(string topic, object message)
         {
-            var body = Encoding.UTF8.GetBytes(JsonSerialize(message));
-            var props = Model.CreateBasicProperties();
-            props.ContentType = "application/json";
-            props.DeliveryMode = 1;
-            props.Expiration = "1800000";
-
             try
             {
-                Model.BasicPublish("", topic, props, body);
+                var body = Encoding.UTF8.GetBytes(JsonSerialize(message));
+                Model.BasicPublish("", topic, Props, body);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Logger.LogError(ex, "");
                 _model?.Dispose();
                 _model = null;
+                throw ex;
             }
 
             string JsonSerialize(object msg)
             {
-                try
+                var result = JsonConvert.SerializeObject(msg, Formatting.Indented, new JsonSerializerSettings
                 {
-                    var result = JsonConvert.SerializeObject(msg, Formatting.Indented, new JsonSerializerSettings
-                    {
-                        TypeNameHandling = TypeNameHandling.Objects,
-                        TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Simple
-                    });
-                    return result;
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogError(ex, "");
-                    return null;
-                }
+                    TypeNameHandling = TypeNameHandling.Objects,
+                    TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Simple
+                });
+                return result;
             }
         }
 
         #region IDisposable Support
+
         private bool disposedValue = false; // 중복 호출을 검색하려면
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
 
         protected virtual void Dispose(bool disposing)
         {
@@ -90,13 +89,7 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
                 disposedValue = true;
             }
         }
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
 
-        
-        #endregion
+        #endregion IDisposable Support
     }
 }
