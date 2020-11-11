@@ -33,7 +33,7 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection.Tests
             using (var channel = host.Services.GetService<IMQChannel>())
             using (var cts = new CancellationTokenSource())
             {
-                channel.Send("mls.test.test1.consumer1", "Hello");
+                channel.Tell("mls.test.test1.consumer1", "Hello");
             }
 
             using (var channel = host.Services.GetService<IMQChannel>())

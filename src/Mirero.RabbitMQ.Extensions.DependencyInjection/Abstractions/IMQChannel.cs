@@ -6,7 +6,9 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection.Abstractions
 
     public interface IMQChannel : IDisposable
     {
-        void Send(string topic, object message, string topicType = "fanout");
+        void Tell(string topic, object message);
         Task<T> ReceiveAsync<T>(string topic, CancellationToken ct);
+        Task<object> ReceiveAsync(string topic, CancellationToken ct);
+        void Ack();
     }
 }

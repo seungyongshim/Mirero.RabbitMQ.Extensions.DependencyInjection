@@ -30,7 +30,8 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
 
             var addresses = new[]
             {
-                new AmqpTcpEndpoint("127.0.0.1")
+                new AmqpTcpEndpoint("127.0.0.1"),
+                new AmqpTcpEndpoint("localhost")
             };
 
             // RabbitMQ에 접속
@@ -42,18 +43,7 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
             }
         }
 
-        public IModel CreateModel()
-        {
-            if (Connection != null)
-            {
-                if (Connection.IsOpen)
-                {
-                    var model = Connection.CreateModel();
-                    return model;
-                }
-            }
-            return null;
-        }
+        public IModel CreateModel() => Connection.CreateModel();
 
         #region IDisposable Support
 
