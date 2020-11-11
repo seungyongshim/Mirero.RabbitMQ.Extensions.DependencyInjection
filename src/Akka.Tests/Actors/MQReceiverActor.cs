@@ -1,17 +1,13 @@
 using System;
 using System.Threading.Tasks;
+using System.Windows.Input;
 using Akka.Actor;
 using Akka.Event;
 using Mirero.RabbitMQ.Extensions.DependencyInjection.Abstractions;
+using RabbitMQ.Client;
 
 namespace Actor.Tests.Actors
 {
-    public enum AckType
-    {
-        Ack,
-        Nack
-    }
-
     public class MQReceiverActor : ReceiveActor, IWithUnboundedStash
     {
         private readonly ILoggingAdapter _logger = Context.GetLogger();
@@ -46,18 +42,9 @@ namespace Actor.Tests.Actors
             var self = Context.Self;
 
             var ret = await MQReceiver.ReceiveAsync(TimeSpan.FromSeconds(30)).ConfigureAwait(false);
-            var ack = await parent.Ask<AckType>(new Received(ret), TimeSpan.FromSeconds(30)).ConfigureAwait(false);
+            var ack = await parent.Ask<ICommand>(new Received(ret), TimeSpan.FromSeconds(30)).ConfigureAwait(false);
 
-            switch (ack)
-            {
-                case AckType.Ack:
-                    MQReceiver.Ack();
-                    break;
-                case AckType.Nack:
-                default:
-                    MQReceiver.Nack();
-                    break;
-            }
+            ack.Execute(MQReceiver);
 
             self.Tell(new Read());
         }
@@ -66,6 +53,20 @@ namespace Actor.Tests.Actors
         {
             ReceiveAsync<Read>(HandleAsync);
             Self.Tell(new Read());
+        }
+
+        public class Ack : ICommand
+        {
+            public event EventHandler CanExecuteChanged;
+            public bool CanExecute(object parameter) => throw new NotImplementedException();
+            public void Execute(object parameter) => (parameter as IMQReceiver).Ack();
+        }
+
+        public class Nack : ICommand
+        {
+            public event EventHandler CanExecuteChanged;
+            public bool CanExecute(object parameter) => throw new NotImplementedException();
+            public void Execute(object parameter) => (parameter as IMQReceiver).Nack();
         }
 
         public class Received

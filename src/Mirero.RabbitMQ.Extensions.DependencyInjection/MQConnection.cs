@@ -25,7 +25,8 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
                 VirtualHost = "/",
                 UserName = "mirero",
                 Password = "system",
-                NetworkRecoveryInterval = TimeSpan.FromSeconds(5)
+                NetworkRecoveryInterval = TimeSpan.FromSeconds(5),
+                DispatchConsumersAsync = true,
             };
 
             var addresses = new[]

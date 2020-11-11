@@ -1,18 +1,18 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.DependencyInjection;
-using RabbitMQ.Client;
-using RabbitMQ.Client.Events;
-using System.Threading.Channels;
-using System.Threading.Tasks;
-using System.Threading;
-using Newtonsoft.Json;
-using Mirero.RabbitMQ.Extensions.DependencyInjection.Abstractions;
-
 namespace Mirero.RabbitMQ.Extensions.DependencyInjection
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Text;
+    using Microsoft.Extensions.Logging;
+    using Microsoft.Extensions.DependencyInjection;
+    using global::RabbitMQ.Client;
+    using global::RabbitMQ.Client.Events;
+    using System.Threading.Channels;
+    using System.Threading.Tasks;
+    using System.Threading;
+    using Newtonsoft.Json;
+    using Mirero.RabbitMQ.Extensions.DependencyInjection.Abstractions;
+
     public class MQReceiver : IMQReceiver
     {
         public void Ack()
@@ -60,11 +60,10 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
                 throw new Exception("Last Message is not Ack or Nack.");
             }
 
-            using (var cts = new CancellationTokenSource())
+            using (var cts = new CancellationTokenSource(timeout))
             {
                 try
                 {
-                    cts.CancelAfter(timeout);
                     (var rawMessage, var deliveryTag) = await InnerQueue.Reader.ReadAsync(cts.Token);
 
                     var result = JsonConvert.DeserializeObject<T>(rawMessage, new JsonSerializerSettings
@@ -104,14 +103,14 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
             if (IsStarted == true) return;
 
             InnerQueue = Channel.CreateUnbounded<(string, ulong)>();
-            var consumer = new EventingBasicConsumer(Model);
+            var consumer = new AsyncEventingBasicConsumer(Model);
             consumer.Received += Consumer_Received;
             Unsubscribe = () => consumer.Received -= Consumer_Received;
 
             Model.BasicConsume(topic, false, consumer);
             IsStarted = true;
 
-            async void Consumer_Received(object sender, BasicDeliverEventArgs e)
+            async Task Consumer_Received(object sender, BasicDeliverEventArgs e)
             {
                 try
                 {

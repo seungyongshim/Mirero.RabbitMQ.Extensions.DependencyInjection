@@ -61,7 +61,7 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
             {
                 var result = JsonConvert.SerializeObject(msg, Formatting.Indented, new JsonSerializerSettings
                 {
-                    TypeNameHandling = TypeNameHandling.Objects,
+                    TypeNameHandling = TypeNameHandling.All,
                     TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Simple
                 });
                 return result;

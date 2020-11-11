@@ -1,17 +1,17 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Actor.Tests.Actors;
-using Akka.Actor;
-using Akka.DI.Core;
-using Akka.Tests.Actors;
-using FluentAssertions;
-using FluentAssertions.Extensions;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Xunit;
-
 namespace Akka.Tests
 {
+    using System.Collections.Generic;
+    using System.Threading.Tasks;
+    using global::Actor.Tests.Actors;
+    using Akka.Actor;
+    using Akka.DI.Core;
+    using Akka.Tests.Actors;
+    using FluentAssertions;
+    using FluentAssertions.Extensions;
+    using Microsoft.Extensions.DependencyInjection;
+    using Microsoft.Extensions.Hosting;
+    using Xunit;
+
     public class SenderActorSpec : Akka.TestKit.Xunit2.TestKit
     {
         [Fact]
@@ -58,22 +58,35 @@ namespace Akka.Tests
 
             receiverActor.Tell(new MQReceiverActor.Setup("rmq.test.akka.publisher"));
 
-            probe.ExpectMsg<MQReceiverActor.Received>(5.Seconds()).Message
-                                                                   .As<string>()
-                                                                   .Should().Be("1");
-            receiverActor.Tell(AckType.Ack);
+            probe.ExpectMsg<MQReceiverActor.Received>((m, s) =>
+            {
+                m.Message.As<string>().Should().Be("1");
+                s.Tell(new MQReceiverActor.Ack());
 
-            probe.ExpectMsg<MQReceiverActor.Received>(5.Seconds()).Message.As<Hello>();
-            receiverActor.Tell(AckType.Ack);
+            }, 5.Seconds());
 
-            probe.ExpectMsg<MQReceiverActor.Received>(5.Seconds()).Message
-                                                                   .As<IEnumerable<string>>()
-                                                                   .Should()
-                                                                   .BeSubsetOf(new[] { "3" });
+            probe.ExpectMsg<MQReceiverActor.Received>((m, s) =>
+            {
+                m.Message.As<Hello>();
+                s.Tell(new MQReceiverActor.Ack());
+            });
 
-            receiverActor.Tell(AckType.Ack);
+            probe.ExpectMsg<MQReceiverActor.Received>((m, s) =>
+            {
+                m.Message.As<IEnumerable<string>>()
+                         .Should()
+                         .BeSubsetOf(new[] { "3" });
+                s.Tell(new MQReceiverActor.Nack());
+            });
 
-            await Task.Delay(5.Seconds());
+            probe.ExpectMsg<MQReceiverActor.Received>((m, s) =>
+            {
+                m.Message.As<IEnumerable<string>>()
+                         .Should()
+                         .BeSubsetOf(new[] { "3" });
+                s.Tell(new MQReceiverActor.Ack());
+            });
+
             await host.StopAsync();
         }
 
