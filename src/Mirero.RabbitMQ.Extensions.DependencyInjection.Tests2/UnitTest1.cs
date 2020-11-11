@@ -28,43 +28,47 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection.Tests2
 
             await host.StartAsync();
 
-            using (var channel = host.Services.GetService<IMQChannel>())
-            using (var cts = new CancellationTokenSource())
+            using (var channel = host.Services.GetService<IMQSender>())
             {
                 channel.Tell("mls.test.testservice", new[] { "Hello", "World" });
                 channel.Tell("mls.test.testservice", new TestMessage("Hello"));
                 channel.Tell("mls.test.testservice", new TestMessage("World"));
-                channel.Tell("mls.test.testservice", new[] { "Hello", "World" });
+                //channel.Tell("mls.test.testservice", new[] { "Hello", "World" });
             }
 
-            using (var channel = host.Services.GetService<IMQChannel>())
-            using (var cts = new CancellationTokenSource())
+            using (var receiver = host.Services.GetService<IMQReceiver>())
             {
-                cts.CancelAfter(60.Seconds());
+                receiver.Start("mls.test.testservice");
 
-                var message = await channel.ReceiveAsync<IEnumerable<string>>("mls.test.testservice", cts.Token);
+                var message = await receiver.ReceiveAsync<IEnumerable<string>>(2.Seconds());
                 message.Should().BeSubsetOf(new[] { "Hello", "World" });
 
-                channel.Ack();
+                receiver.Ack();
 
 
-                var message1 = await channel.ReceiveAsync("mls.test.testservice", cts.Token);
+                var message1 = await receiver.ReceiveAsync(2.Seconds());
                 message1.Should().BeOfType<TestMessage>();
                 message1.As<TestMessage>().Value.Should().Be("Hello");
 
-                channel.Ack();
+                receiver.Nack();
 
 
-                var message2 = await channel.ReceiveAsync<TestMessage2>("mls.test.testservice", cts.Token);
+                var message1_1 = await receiver.ReceiveAsync(2.Seconds());
+                message1_1.Should().BeOfType<TestMessage>();
+                message1_1.As<TestMessage>().Value.Should().Be("Hello");
+
+                receiver.Ack();
+
+                var message2 = await receiver.ReceiveAsync<TestMessage2>(2.Seconds());
                 message2.Value.Should().Be("World");
 
-                channel.Ack();
+                receiver.Ack();
 
 
-                var message3 = await channel.ReceiveAsync<IEnumerable<string>>("mls.test.testservice", cts.Token);
-                message3.Should().BeSubsetOf(new[] { "Hello", "World" });
+                var message3 = await receiver.ReceiveAsync<IEnumerable<string>>(2.Seconds());
+                message3.Should().BeNull();
 
-                channel.Ack();
+                receiver.Ack();
             }
 
             await host.StopAsync(1.Seconds());

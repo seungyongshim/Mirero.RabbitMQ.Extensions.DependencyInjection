@@ -30,13 +30,13 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection.Tests
 
             host.Start();
 
-            using (var channel = host.Services.GetService<IMQChannel>())
+            using (var channel = host.Services.GetService<IMQSender>())
             using (var cts = new CancellationTokenSource())
             {
                 channel.Tell("mls.test.test1.consumer1", "Hello");
             }
 
-            using (var channel = host.Services.GetService<IMQChannel>())
+            using (var channel = host.Services.GetService<IMQSender>())
             using (var cts = new CancellationTokenSource())
             {
                 cts.CancelAfter(555.Seconds());

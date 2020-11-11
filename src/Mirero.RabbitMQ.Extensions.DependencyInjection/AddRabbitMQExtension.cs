@@ -12,7 +12,9 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddHostedService<MQHostedService>();
             services.AddSingleton<MQDeclares>(sp => new MQDeclares(declares));
             services.AddSingleton<MQConnection>();
-            services.AddTransient<IMQChannel, MQChannel>();
+            services.AddTransient<IMQSender, MQSender>();
+            services.AddTransient<IMQReceiver, MQReceiver>();
+            services.AddTransient<IMQRpc, MQRpc>();
             services.AddTransient<IModel>(sp =>
             {
                 var conn = sp.GetRequiredService<MQConnection>();
