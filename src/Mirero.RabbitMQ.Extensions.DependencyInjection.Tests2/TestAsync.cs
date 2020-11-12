@@ -10,10 +10,10 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection.Tests2
     using System.Threading.Tasks;
     using System.Collections.Generic;
 
-    public class UnitTest1
+    public class TestAsyncSpec
     {
         [Fact]
-        public async Task Test1Async()
+        public async Task TestAsync()
         {
             var host = Host.CreateDefaultBuilder()
                            .ConfigureServices(services =>
@@ -33,7 +33,7 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection.Tests2
                 channel.Tell("mls.test.testservice", new[] { "Hello", "World" });
                 channel.Tell("mls.test.testservice", new TestMessage("Hello"));
                 channel.Tell("mls.test.testservice", new TestMessage("World"));
-                //channel.Tell("mls.test.testservice", new[] { "Hello", "World" });
+                channel.Tell("mls.test.testservice", 1);
             }
 
             using (var receiver = host.Services.GetService<IMQReceiver>())
@@ -65,8 +65,8 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection.Tests2
                 receiver.Ack();
 
 
-                var message3 = await receiver.ReceiveAsync<IEnumerable<string>>(2.Seconds());
-                message3.Should().BeNull();
+                var message3 = await receiver.ReceiveAsync(2.Seconds());
+                message3.As<long>().Should().Be(1);
 
                 receiver.Ack();
             }

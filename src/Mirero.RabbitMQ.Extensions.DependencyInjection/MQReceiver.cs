@@ -77,12 +77,17 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
                     DeliveryTag = deliveryTag;
                     return result;
                 }
+                catch (OperationCanceledException ex)
+                {
+                    throw ex;
+                }
                 catch (Exception ex)
                 {
                     Logger.LogError(ex, "");
                     _model?.Dispose();
                     DeliveryTag = 0;
                     _model = null;
+                    throw ex;
                 }
             }
             return default;
@@ -95,7 +100,7 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
         }
 
         /// <summary>
-        /// safety reenterenc
+        /// http://wish.mirero.co.kr/mirero/project/mls/1.0/h18-mirero-mls10-rd/mls-application/-/issues/1649#note_178824
         /// </summary>
         /// <param name="topic"></param>
         public void Start(string topic)

@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Event;
 using Mirero.RabbitMQ.Extensions.DependencyInjection.Abstractions;
-using static Akka.Tests.SenderActorSpec;
 
 namespace Akka.Tests.Actors
 {
@@ -32,7 +31,7 @@ namespace Akka.Tests.Actors
 
             // 테스트를 위한 코드
             // 메시지를 정상적으로 처리할 수 있게 메시지를 고친다.
-            if (message is Hello a)
+            if (message is Akka.Tests.MQReceiverActorSpec.Hello a)
             {
                 a.IsMakeException = false;
 
@@ -59,7 +58,7 @@ namespace Akka.Tests.Actors
             MQPublisher.Tell(Topic, msg);
         }
 
-        private async Task HandleAsync(Hello msg)
+        private async Task HandleAsync(Akka.Tests.MQReceiverActorSpec.Hello msg)
         {
             if (msg.IsMakeException)
             {
@@ -72,7 +71,7 @@ namespace Akka.Tests.Actors
 
         private void RegisterMessageHandlers()
         {
-            ReceiveAsync<Hello>(HandleAsync);
+            ReceiveAsync<Akka.Tests.MQReceiverActorSpec.Hello>(HandleAsync);
             Receive<object>(Handle, null);
         }
 

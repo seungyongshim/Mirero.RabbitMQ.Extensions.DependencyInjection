@@ -4,7 +4,6 @@ using System.Windows.Input;
 using Akka.Actor;
 using Akka.Event;
 using Mirero.RabbitMQ.Extensions.DependencyInjection.Abstractions;
-using RabbitMQ.Client;
 
 namespace Actor.Tests.Actors
 {
@@ -21,7 +20,6 @@ namespace Actor.Tests.Actors
             Context.Parent.Tell(new Created());
         }
 
-        
         public IMQReceiver MQReceiver { get; }
 
         public IStash Stash { get; set; }
@@ -58,16 +56,24 @@ namespace Actor.Tests.Actors
         public class Ack : ICommand
         {
             public event EventHandler CanExecuteChanged;
+
             public bool CanExecute(object parameter) => throw new NotImplementedException();
+
             public void Execute(object parameter) => (parameter as IMQReceiver).Ack();
         }
+
+        public class Created { }
 
         public class Nack : ICommand
         {
             public event EventHandler CanExecuteChanged;
+
             public bool CanExecute(object parameter) => throw new NotImplementedException();
+
             public void Execute(object parameter) => (parameter as IMQReceiver).Nack();
         }
+
+        public class Read { };
 
         public class Received
         {
@@ -79,13 +85,8 @@ namespace Actor.Tests.Actors
             public object Message { get; set; }
         }
 
-        public class Created { }
-
-        public class Read { };
-
         public class Setup
         {
-
             public Setup(string topic) => Topic = topic;
 
             public string Topic { get; set; }
