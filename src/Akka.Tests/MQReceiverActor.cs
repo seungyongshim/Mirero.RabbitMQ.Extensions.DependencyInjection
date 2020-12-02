@@ -48,7 +48,7 @@ namespace Akka.Tests
 
             senderActor.Tell("1");
             senderActor.Tell(new Hello());
-            senderActor.Tell(new[] { "3" });
+            senderActor.Tell(new[] { 3 });
             senderActor.Tell("4");
             senderActor.Tell(new[] { "5" });
 
@@ -72,17 +72,17 @@ namespace Akka.Tests
 
             probe.ExpectMsg<MQReceiverActor.Received>((m, s) =>
             {
-                m.Message.As<IEnumerable<string>>()
+                m.Message.As<IEnumerable<int>>()
                          .Should()
-                         .BeSubsetOf(new[] { "3" });
+                         .BeSubsetOf(new[] { 3 });
                 s.Tell(new MQReceiverActor.Nack());
             });
 
             probe.ExpectMsg<MQReceiverActor.Received>((m, s) =>
             {
-                m.Message.As<IEnumerable<string>>()
+                m.Message.As<IEnumerable<int>>()
                          .Should()
-                         .BeSubsetOf(new[] { "3" });
+                         .BeSubsetOf(new[] { 3 });
                 s.Tell(new MQReceiverActor.Ack());
             });
 

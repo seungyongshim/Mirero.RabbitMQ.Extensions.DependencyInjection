@@ -1,25 +1,19 @@
 namespace Mirero.RabbitMQ.Extensions.DependencyInjection
 {
     using System;
-    using System.Collections.Generic;
     using System.Text;
-    using Microsoft.Extensions.Logging;
-    using Microsoft.Extensions.DependencyInjection;
-    using global::RabbitMQ.Client;
-    using global::RabbitMQ.Client.Events;
+    using System.Threading;
     using System.Threading.Channels;
     using System.Threading.Tasks;
-    using System.Threading;
-    using Newtonsoft.Json;
+    using global::RabbitMQ.Client;
+    using global::RabbitMQ.Client.Events;
+    using Microsoft.Extensions.DependencyInjection;
+    using Microsoft.Extensions.Logging;
     using Mirero.RabbitMQ.Extensions.DependencyInjection.Abstractions;
+    using Newtonsoft.Json;
 
     public class MQReceiver : IMQReceiver
     {
-        public void Ack()
-        {
-            Model.BasicAck(DeliveryTag, false);
-            DeliveryTag = 0;
-        }
         private IModel _model;
 
         public MQReceiver(IServiceProvider serviceProvider, ILogger<MQReceiver> logger)
@@ -47,18 +41,26 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
         }
 
         public Action Unsubscribe { get; private set; } = () => { };
+
         public bool IsStarted { get; private set; } = false;
+
         public Channel<(string, ulong)> InnerQueue { get; private set; }
-        public ulong DeliveryTag { get; private set; }
+
+        public AckState AckState { get; private set; } = 0L;
+
+        public void Ack()
+        {
+            Model.BasicAck(AckState.DeliveryTag, false);
+            AckState.Reset();
+        }
 
         public async Task<object> ReceiveAsync(TimeSpan timeout) =>
             await ReceiveAsync<object>(timeout);
+
         public async Task<T> ReceiveAsync<T>(TimeSpan timeout)
         {
-            if (DeliveryTag != 0)
-            {
+            if (AckState.IsNotAckSend())
                 throw new Exception("Last Message is not Ack or Nack.");
-            }
 
             using (var cts = new CancellationTokenSource(timeout))
             {
@@ -70,33 +72,31 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
                     {
                         TypeNameHandling = typeof(T).Name == "Object" ? TypeNameHandling.All
                                                                       : TypeNameHandling.None,
-
-
                     });
 
-                    DeliveryTag = deliveryTag;
+                    AckState = deliveryTag;
                     return result;
                 }
                 catch (OperationCanceledException ex)
                 {
-                    throw ex;
+                    throw;
                 }
                 catch (Exception ex)
                 {
                     Logger.LogError(ex, "");
+                    AckState.Reset();
                     _model?.Dispose();
-                    DeliveryTag = 0;
                     _model = null;
-                    throw ex;
+
+                    throw;
                 }
             }
-            return default;
         }
 
         public void Nack()
         {
-            Model.BasicNack(DeliveryTag, false, true);
-            DeliveryTag = 0;
+            Model.BasicNack(AckState.DeliveryTag, false, true);
+            AckState.Reset();
         }
 
         /// <summary>
@@ -130,10 +130,15 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
             }
         }
 
-        
-
         #region IDisposable Support
+
         private bool disposedValue = false; // 중복 호출을 검색하려면
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
 
         protected virtual void Dispose(bool disposing)
         {
@@ -142,17 +147,13 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
                 if (disposing)
                 {
                     Unsubscribe();
+                    _model?.Dispose();
                 }
 
                 disposedValue = true;
             }
         }
 
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-        #endregion
+        #endregion IDisposable Support
     }
 }

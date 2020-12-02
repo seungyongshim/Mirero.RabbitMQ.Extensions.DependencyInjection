@@ -1,12 +1,12 @@
-using System;
-using System.Threading.Tasks;
-using System.Windows.Input;
-using Akka.Actor;
-using Akka.Event;
-using Mirero.RabbitMQ.Extensions.DependencyInjection.Abstractions;
-
 namespace Actor.Tests.Actors
 {
+    using System;
+    using System.Threading.Tasks;
+    using System.Windows.Input;
+    using Akka.Actor;
+    using Akka.Event;
+    using Mirero.RabbitMQ.Extensions.DependencyInjection.Abstractions;
+
     public class MQReceiverActor : ReceiveActor, IWithUnboundedStash
     {
         private readonly ILoggingAdapter _logger = Context.GetLogger();

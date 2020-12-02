@@ -54,7 +54,7 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
                 Logger.LogError(ex, "");
                 _model?.Dispose();
                 _model = null;
-                throw ex;
+                throw;
             }
 
             string JsonSerialize(object msg)

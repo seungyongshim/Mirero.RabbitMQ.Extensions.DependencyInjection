@@ -9,16 +9,26 @@
     ],
     "vhosts": [
         {
-            "name": "/"
+          "name": "/"
+        },
+        {
+          "name": "/rabbitmq"
         }
     ],
     "permissions": [
         {
-            "user": "mirero",
-            "vhost": "/",
-            "configure": ".*",
-            "write": ".*",
-            "read": ".*"
+          "user": "mirero",
+          "vhost": "/",
+          "configure": ".*",
+          "write": ".*",
+          "read": ".*"
+        },
+        {
+          "user": "mirero",
+          "vhost": "/rabbitmq",
+          "configure": ".*",
+          "write": ".*",
+          "read": ".*"
         }
     ],
     "parameters": [],
