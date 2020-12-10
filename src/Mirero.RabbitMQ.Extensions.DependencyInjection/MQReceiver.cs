@@ -8,7 +8,7 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
     using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Events;
     using Microsoft.Extensions.Logging;
-    using Mirero.RabbitMQ.Extensions.DependencyInjection.Abstractions;
+    using Abstractions;
     using Newtonsoft.Json;
 
     public class MQReceiver : IMQReceiver
@@ -23,13 +23,9 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
 
         public IServiceProvider ServiceProvider { get; }
         public ILogger<MQReceiver> Logger { get; }
-
-        public IModel Model { get; set; }
-
+        public IModel Model { get; }
         public Action Unsubscribe { get; private set; } = () => { };
-
         public bool IsStarted { get; private set; } = false;
-
         public Channel<(string, ulong)> InnerQueue { get; private set; }
 
         public async Task<(object, ICommitable)> ReceiveAsync(TimeSpan timeout) =>
@@ -43,9 +39,9 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
 
                 try
                 {
-                    (var rawMessage, var deliveryTag) = await InnerQueue.Reader.ReadAsync(cts.Token);
+                    var (rawMessage, tag) = await InnerQueue.Reader.ReadAsync(cts.Token).ConfigureAwait(false);
 
-                    commit = new Commit(deliveryTag, Ack, Nack);
+                    commit = new Commit(tag, Ack, Nack);
 
                     var result = JsonConvert.DeserializeObject<T>(rawMessage, new JsonSerializerSettings
                     {
@@ -98,30 +94,16 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
             }
         }
 
-        private Task Ack(ulong deliveryTag)
+        private async Task Ack(ulong deliveryTag)
         {
-            try
-            {
-                Model.BasicAck(deliveryTag, false);
-                return Task.CompletedTask;
-            }
-            catch (Exception e)
-            {
-                return Task.FromException(e);
-            }
+            Model.BasicAck(deliveryTag, false);
+            await Task.CompletedTask;
         }
 
-        private Task Nack(ulong deliveryTag)
+        private async Task Nack(ulong deliveryTag)
         {
-            try
-            {
-                Model.BasicNack(deliveryTag, false, true);
-                return Task.CompletedTask;
-            }
-            catch (Exception e)
-            {
-                return Task.FromException(e);
-            }
+            Model.BasicNack(deliveryTag, false, true);
+            await Task.CompletedTask;
         }
 
         #region IDisposable Support
