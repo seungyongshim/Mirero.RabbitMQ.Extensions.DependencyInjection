@@ -50,11 +50,7 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
 
         private bool disposedValue = false; // 중복 호출을 검색하려면
 
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
+        public void Dispose() => Dispose(true);
 
         protected virtual void Dispose(bool disposing)
         {

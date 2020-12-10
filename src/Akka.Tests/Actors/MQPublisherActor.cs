@@ -49,16 +49,15 @@ namespace Akka.Tests.Actors
         {
             Topic = msg.Topic;
             Become(RegisterMessageHandlers);
-
             Stash.UnstashAll();
         }
 
-        private void Handle(object msg)
+        private async Task HandleAsync(object msg)
         {
-            MQPublisher.Tell(Topic, msg);
+            await MQPublisher.Tell(Topic, msg);
         }
 
-        private async Task HandleAsync(Akka.Tests.MQReceiverActorSpec.Hello msg)
+        private async Task HandleAsync(MQReceiverActorSpec.Hello msg)
         {
             if (msg.IsMakeException)
             {
@@ -66,25 +65,22 @@ namespace Akka.Tests.Actors
                 throw new Exception();
             }
 
-            MQPublisher.Tell(Topic, msg);
+            await MQPublisher.Tell(Topic, msg);
         }
 
         private void RegisterMessageHandlers()
         {
-            ReceiveAsync<Akka.Tests.MQReceiverActorSpec.Hello>(HandleAsync);
-            Receive<object>(Handle, null);
+            ReceiveAsync<MQReceiverActorSpec.Hello>(HandleAsync);
+            ReceiveAsync<object>(HandleAsync);
         }
 
         public class Created { }
 
         public class Setup
         {
-            public Setup(string topic)
-            {
-                Topic = topic;
-            }
+            public Setup(string topic) => Topic = topic;
 
-            public string Topic { get; set; }
+            public string Topic { get; }
         }
     }
 }

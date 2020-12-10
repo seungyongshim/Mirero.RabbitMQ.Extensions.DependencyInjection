@@ -2,6 +2,7 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
 {
     using System;
     using System.Text;
+    using System.Threading.Tasks;
     using global::RabbitMQ.Client;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Logging;
@@ -10,51 +11,27 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
 
     public class MQPublisher : IMQPublisher
     {
-        private IModel _model;
-
-        public MQPublisher(IServiceProvider serviceProvider, ILogger<MQPublisher> logger)
+        public MQPublisher(IServiceProvider serviceProvider, IMQChannel channel, ILogger<MQPublisher> logger )
         {
-            ServiceProvider = serviceProvider;
             Logger = logger;
+            Channel = channel;
         }
 
         public ILogger<MQPublisher> Logger { get; }
+        public IMQChannel Channel { get; }
 
-        public IModel Model
-        {
-            get
-            {
-                if (_model == null)
-                {
-                    _model = ServiceProvider.GetService<IModel>();
-                    _model.BasicQos(0, 1, false);
-                    var props = Model.CreateBasicProperties();
-                        props.ContentType = "application/json";
-                        props.DeliveryMode = 1;
-                        props.Expiration = "1800000";
-                    Props = props;
-                }
-
-                return _model;
-            }
-        }
-
-        public IServiceProvider ServiceProvider { get; }
-        public IBasicProperties Props { get; private set; }
-
-        public void Tell(string topic, object message)
+        public Task Tell(string topic, object message)
         {
             try
             {
                 var body = Encoding.UTF8.GetBytes(JsonSerialize(message));
-                Model.BasicPublish("", topic, Props, body);
+                Channel.BasicQueuePublish(topic, body);
+                return Task.CompletedTask;
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "");
-                _model?.Dispose();
-                _model = null;
-                throw;
+                return Task.FromException(ex);
             }
 
             string JsonSerialize(object msg)
@@ -72,11 +49,7 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
 
         private bool disposedValue = false; // 중복 호출을 검색하려면
 
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
+        public void Dispose() => Dispose(true);
 
         protected virtual void Dispose(bool disposing)
         {
@@ -84,7 +57,7 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
             {
                 if (disposing)
                 {
-                    _model?.Dispose();
+                    Channel?.Dispose();
                 }
                 disposedValue = true;
             }

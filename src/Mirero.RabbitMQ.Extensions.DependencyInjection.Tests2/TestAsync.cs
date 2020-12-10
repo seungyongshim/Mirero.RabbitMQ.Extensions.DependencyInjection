@@ -40,35 +40,39 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection.Tests2
             {
                 receiver.Start("mls.test.testservice");
 
-                var message = await receiver.ReceiveAsync<IEnumerable<string>>(2.Seconds());
-                message.Should().BeSubsetOf(new[] { "Hello", "World" });
+                {
+                    var (message, commit) = await receiver.ReceiveAsync<IEnumerable<string>>(2.Seconds());
+                    message.Should().BeSubsetOf(new[] {"Hello", "World"});
 
-                receiver.Ack();
+                    await commit.Ack();
+                }
 
+                {
+                    var (message, commit) = await receiver.ReceiveAsync(2.Seconds());
+                    message.Should().BeOfType<TestMessage>();
+                    message.As<TestMessage>().Value.Should().Be("Hello");
 
-                var message1 = await receiver.ReceiveAsync(2.Seconds());
-                message1.Should().BeOfType<TestMessage>();
-                message1.As<TestMessage>().Value.Should().Be("Hello");
+                    await commit.Nack();
+                }
 
-                receiver.Nack();
+                {
+                    var (message, commit) = await receiver.ReceiveAsync(2.Seconds());
+                    message.Should().BeOfType<TestMessage>();
+                    message.As<TestMessage>().Value.Should().Be("Hello");
+                    await commit.Ack();
+                }
 
+                {
+                    var (message, commit) = await receiver.ReceiveAsync<TestMessage2>(2.Seconds());
+                    message.Value.Should().Be("World");
+                    await commit.Ack();
+                }
 
-                var message1_1 = await receiver.ReceiveAsync(2.Seconds());
-                message1_1.Should().BeOfType<TestMessage>();
-                message1_1.As<TestMessage>().Value.Should().Be("Hello");
-
-                receiver.Ack();
-
-                var message2 = await receiver.ReceiveAsync<TestMessage2>(2.Seconds());
-                message2.Value.Should().Be("World");
-
-                receiver.Ack();
-
-
-                var message3 = await receiver.ReceiveAsync(2.Seconds());
-                message3.As<long>().Should().Be(1);
-
-                receiver.Ack();
+                {
+                    var (message, commit) = await receiver.ReceiveAsync(2.Seconds());
+                    message.As<long>().Should().Be(1);
+                    await commit.Ack();
+                }
             }
 
             await host.StopAsync(1.Seconds());

@@ -7,38 +7,24 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
     using System.Threading.Tasks;
     using global::RabbitMQ.Client;
     using global::RabbitMQ.Client.Events;
-    using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Logging;
     using Mirero.RabbitMQ.Extensions.DependencyInjection.Abstractions;
     using Newtonsoft.Json;
 
     public class MQReceiver : IMQReceiver
     {
-        private IModel _model;
-
-        public MQReceiver(IServiceProvider serviceProvider, ILogger<MQReceiver> logger)
+        public MQReceiver(IServiceProvider serviceProvider, IModel model, ILogger<MQReceiver> logger)
         {
             ServiceProvider = serviceProvider;
+            Model = model;
             Logger = logger;
+            Model.BasicQos(0, 1, false);
         }
 
         public IServiceProvider ServiceProvider { get; }
-
         public ILogger<MQReceiver> Logger { get; }
 
-        public IModel Model
-        {
-            get
-            {
-                if (_model == null)
-                {
-                    _model = ServiceProvider.GetService<IModel>();
-                    _model.BasicQos(0, 1, false);
-                }
-
-                return _model;
-            }
-        }
+        public IModel Model { get; set; }
 
         public Action Unsubscribe { get; private set; } = () => { };
 
@@ -46,27 +32,20 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
 
         public Channel<(string, ulong)> InnerQueue { get; private set; }
 
-        public AckState AckState { get; private set; } = 0L;
-
-        public void Ack()
-        {
-            Model.BasicAck(AckState.DeliveryTag, false);
-            AckState.Reset();
-        }
-
-        public async Task<object> ReceiveAsync(TimeSpan timeout) =>
+        public async Task<(object, ICommitable)> ReceiveAsync(TimeSpan timeout) =>
             await ReceiveAsync<object>(timeout);
 
-        public async Task<T> ReceiveAsync<T>(TimeSpan timeout)
+        public async Task<(T, ICommitable)> ReceiveAsync<T>(TimeSpan timeout)
         {
-            if (AckState.IsNotAckSend())
-                throw new Exception("Last Message is not Ack or Nack.");
-
             using (var cts = new CancellationTokenSource(timeout))
             {
+                ICommitable commit = null;
+
                 try
                 {
                     (var rawMessage, var deliveryTag) = await InnerQueue.Reader.ReadAsync(cts.Token);
+
+                    commit = new Commit(deliveryTag, Ack, Nack);
 
                     var result = JsonConvert.DeserializeObject<T>(rawMessage, new JsonSerializerSettings
                     {
@@ -74,29 +53,15 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
                                                                       : TypeNameHandling.None,
                     });
 
-                    AckState = deliveryTag;
-                    return result;
-                }
-                catch (OperationCanceledException ex)
-                {
-                    throw;
+                    return (result, commit);
                 }
                 catch (Exception ex)
                 {
                     Logger.LogError(ex, "");
-                    AckState.Reset();
-                    _model?.Dispose();
-                    _model = null;
-
+                    commit?.Nack();
                     throw;
                 }
             }
-        }
-
-        public void Nack()
-        {
-            Model.BasicNack(AckState.DeliveryTag, false, true);
-            AckState.Reset();
         }
 
         /// <summary>
@@ -105,7 +70,10 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
         /// <param name="topic"></param>
         public void Start(string topic)
         {
-            if (IsStarted == true) return;
+            if (IsStarted)
+            {
+                return;
+            }
 
             InnerQueue = Channel.CreateUnbounded<(string, ulong)>();
             var consumer = new AsyncEventingBasicConsumer(Model);
@@ -130,6 +98,32 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
             }
         }
 
+        private Task Ack(ulong deliveryTag)
+        {
+            try
+            {
+                Model.BasicAck(deliveryTag, false);
+                return Task.CompletedTask;
+            }
+            catch (Exception e)
+            {
+                return Task.FromException(e);
+            }
+        }
+
+        private Task Nack(ulong deliveryTag)
+        {
+            try
+            {
+                Model.BasicNack(deliveryTag, false, true);
+                return Task.CompletedTask;
+            }
+            catch (Exception e)
+            {
+                return Task.FromException(e);
+            }
+        }
+
         #region IDisposable Support
 
         private bool disposedValue = false; // 중복 호출을 검색하려면
@@ -147,7 +141,7 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
                 if (disposing)
                 {
                     Unsubscribe();
-                    _model?.Dispose();
+                    Model?.Dispose();
                 }
 
                 disposedValue = true;

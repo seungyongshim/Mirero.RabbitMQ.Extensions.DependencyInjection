@@ -46,9 +46,10 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection.Tests2
                     channel.Tell(topicName, 1);
                 }
 
-                var result = await receiver.ReceiveAsync<int>(2.Seconds());
+                var (result,commit) = await receiver.ReceiveAsync<int>(2.Seconds());
 
                 result.Should().Be(1);
+                await commit.Ack();
             }
 
             await host.StopAsync();

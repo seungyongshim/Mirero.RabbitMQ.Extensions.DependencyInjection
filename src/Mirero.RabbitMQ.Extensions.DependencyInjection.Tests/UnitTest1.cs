@@ -28,20 +28,21 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection.Tests
 
             var host = builder.Build();
 
-            host.Start();
+            await host.StartAsync();
 
             using (var sender = host.Services.GetService<IMQPublisher>())
             using (var cts = new CancellationTokenSource())
             {
-                sender.Tell("rmq.test.test1", "Hello");
+                await sender.Tell("rmq.test.test1", "Hello");
             }
 
             using (var receiver = host.Services.GetService<IMQReceiver>())
             using (var cts = new CancellationTokenSource())
             {
                 receiver.Start("rmq.test.test1");
-                var message = await receiver.ReceiveAsync<string>(5.Seconds());
+                var (message, commit)= await receiver.ReceiveAsync<string>(5.Seconds());
                 message.Should().Be("Hello");
+                await commit.Ack();
             }
 
             await host.StopAsync(1.Seconds());

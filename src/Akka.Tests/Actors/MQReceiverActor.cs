@@ -39,10 +39,10 @@ namespace Actor.Tests.Actors
             var parent = Context.Parent;
             var self = Context.Self;
 
-            var ret = await MQReceiver.ReceiveAsync(TimeSpan.FromSeconds(30)).ConfigureAwait(false);
+            var (ret, commit) = await MQReceiver.ReceiveAsync(TimeSpan.FromSeconds(30)).ConfigureAwait(false);
             var ack = await parent.Ask<ICommand>(new Received(ret), TimeSpan.FromSeconds(30)).ConfigureAwait(false);
 
-            ack.Execute(MQReceiver);
+            ack.Execute(commit);
 
             self.Tell(new Read());
         }
@@ -59,7 +59,7 @@ namespace Actor.Tests.Actors
 
             public bool CanExecute(object parameter) => throw new NotImplementedException();
 
-            public void Execute(object parameter) => (parameter as IMQReceiver).Ack();
+            public void Execute(object parameter) => (parameter as ICommitable).Ack();
         }
 
         public class Created { }
@@ -70,7 +70,7 @@ namespace Actor.Tests.Actors
 
             public bool CanExecute(object parameter) => throw new NotImplementedException();
 
-            public void Execute(object parameter) => (parameter as IMQReceiver).Nack();
+            public void Execute(object parameter) => (parameter as ICommitable).Nack();
         }
 
         public class Read { };

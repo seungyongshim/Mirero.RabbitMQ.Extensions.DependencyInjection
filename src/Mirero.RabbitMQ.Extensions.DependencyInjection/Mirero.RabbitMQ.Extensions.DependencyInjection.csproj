@@ -15,4 +15,10 @@
     <PackageReference Include="System.Threading.Channels" Version="5.0.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Update="Abstractions\IMQChannel.cs">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+
 </Project>

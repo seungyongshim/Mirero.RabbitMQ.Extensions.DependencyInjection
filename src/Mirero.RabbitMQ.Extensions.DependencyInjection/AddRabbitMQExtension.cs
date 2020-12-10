@@ -15,6 +15,7 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddTransient<IMQPublisher, MQPublisher>();
             services.AddTransient<IMQReceiver, MQReceiver>();
             services.AddTransient<IMQRpc, MQRpc>();
+            services.AddTransient<IMQChannel, MQChannel>();
             services.AddTransient<IModel>(sp =>
             {
                 var conn = sp.GetRequiredService<MQConnection>();

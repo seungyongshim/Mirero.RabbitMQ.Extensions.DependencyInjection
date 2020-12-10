@@ -1,10 +1,11 @@
 namespace Mirero.RabbitMQ.Extensions.DependencyInjection.Abstractions
 {
-    using System;
     using System.Threading.Tasks;
 
-    public interface IMQPublisher : IDisposable
+    public interface ICommitable
     {
-        Task Tell(string topic, object message);
+        Task Ack();
+
+        Task Nack();
     }
 }
