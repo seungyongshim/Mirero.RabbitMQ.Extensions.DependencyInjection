@@ -3,6 +3,7 @@ namespace Microsoft.Extensions.DependencyInjection
     using System;
     using Mirero.RabbitMQ.Extensions.DependencyInjection;
     using Mirero.RabbitMQ.Extensions.DependencyInjection.Abstractions;
+    using Mirero.RabbitMQ.Extensions.DependencyInjection.Common;
     using RabbitMQ.Client;
 
     public static class AddRabbitMQExtension
@@ -14,7 +15,7 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddSingleton<MQConnection>();
             services.AddTransient<IMQPublisher, MQPublisher>();
             services.AddTransient<IMQReceiver, MQReceiver>();
-            services.AddTransient<IMQRpc, MQRpc>();
+            services.AddTransient<IMQRpcClient, MQRpcClient>();
             services.AddTransient<IMQChannel, MQChannel>();
             services.AddTransient<IModel>(sp =>
             {

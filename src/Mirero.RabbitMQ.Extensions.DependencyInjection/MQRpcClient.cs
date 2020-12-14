@@ -6,9 +6,9 @@ using Mirero.RabbitMQ.Extensions.DependencyInjection.Abstractions;
 
 namespace Mirero.RabbitMQ.Extensions.DependencyInjection
 {
-    public class MQRpc : IMQRpc
+    public class MQRpcClient : IMQRpcClient
     {
-        public MQRpc(IServiceProvider serviceProvider, IMQPublisher sender, ILogger<MQRpc> logger)
+        public MQRpcClient(IServiceProvider serviceProvider, IMQPublisher sender, ILogger<MQRpcClient> logger)
         {
             ServiceProvider = serviceProvider;
             Sender = sender;
@@ -17,7 +17,7 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
 
         public IServiceProvider ServiceProvider { get; }
         public IMQPublisher Sender { get; }
-        public ILogger<MQRpc> Logger { get; }
+        public ILogger<MQRpcClient> Logger { get; }
 
         public async Task<(T, ICommitable)> AskAsync<T>(string topic, object message, TimeSpan timeout)
         {

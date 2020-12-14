@@ -34,7 +34,7 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection.Tests2
 
             await host.StartAsync();
 
-            var rpc = host.Services.GetService<IMQRpc>();
+            var rpc = host.Services.GetService<IMQRpcClient>();
 
             var t = new Thread(async () =>
             {

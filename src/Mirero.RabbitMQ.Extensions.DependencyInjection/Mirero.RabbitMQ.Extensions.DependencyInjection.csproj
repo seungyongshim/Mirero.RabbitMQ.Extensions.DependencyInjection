@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Update="Abstractions\IMQChannel.cs">
+    <Compile Update="Common\IMQChannel.cs">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>

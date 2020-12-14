@@ -2,10 +2,12 @@ using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
+using Mirero.RabbitMQ.Extensions.DependencyInjection.Common;
 
 namespace Mirero.RabbitMQ.Extensions.DependencyInjection
 {
     using Abstractions;
+    
 
     internal class MQChannel : IMQChannel
     {
@@ -31,6 +33,7 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
 
         public string BasicQueuePublish(string topic, byte[] body, bool expectResponce = false)
         {
+            Model.QueueDeclare(topic, false, false, false, null);
             if (expectResponce)
             {
                 var reply = Model.QueueDeclare().QueueName;
