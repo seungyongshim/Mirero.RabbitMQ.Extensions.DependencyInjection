@@ -1,4 +1,4 @@
-namespace Actor.Tests.Actors
+namespace ConsoleAppWithActor
 {
     using System;
     using System.Threading.Tasks;
@@ -9,8 +9,6 @@ namespace Actor.Tests.Actors
 
     public class MQReceiverActor : ReceiveActor, IWithUnboundedStash
     {
-        private readonly ILoggingAdapter _logger = Context.GetLogger();
-
         public MQReceiverActor(IMQReceiver mqReceiver)
         {
             MQReceiver = mqReceiver;
@@ -21,10 +19,9 @@ namespace Actor.Tests.Actors
         }
 
         public IMQReceiver MQReceiver { get; }
-
         public IStash Stash { get; set; }
-
         public string Topic { get; private set; }
+        private ILoggingAdapter Logger { get; } = Context.GetLogger();
 
         private void Handle(Setup msg)
         {
@@ -77,10 +74,7 @@ namespace Actor.Tests.Actors
 
         public class Received
         {
-            public Received(object message)
-            {
-                Message = message;
-            }
+            public Received(object message) => Message = message;
 
             public object Message { get; set; }
         }

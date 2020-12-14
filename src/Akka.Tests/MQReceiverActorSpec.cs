@@ -2,10 +2,9 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.DI.Core;
-using Akka.Tests.Actors;
+using ConsoleAppWithActor;
 using FluentAssertions;
 using FluentAssertions.Extensions;
-using Actor.Tests.Actors;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Xunit;
@@ -23,6 +22,7 @@ namespace Akka.Tests
                                services.AddAkka(Sys, new[]
                                {
                                    "Actor.Tests",
+                                   "ConsoleAppWithActor",
                                });
                                services.AddRabbitMQ(model =>
                                {
@@ -39,10 +39,10 @@ namespace Akka.Tests
             var probe = CreateTestProbe("probe");
 
             var receiverActor = probe.ChildActorOf(Sys.DI().PropsFactory<MQReceiverActor>().Create(), "ReceiverActor1");
-            probe.ExpectMsg<MQReceiverActor.Created>(30.Seconds());
+            probe.ExpectMsg<MQReceiverActor.Created>(3.Seconds());
 
             var senderActor = probe.ChildActorOf(Sys.DI().PropsFactory<MQPublisherActor>().Create(), "SenderActor");
-            probe.ExpectMsg<MQPublisherActor.Created>(30.Seconds());
+            probe.ExpectMsg<MQPublisherActor.Created>(3.Seconds());
 
             senderActor.Tell(new MQPublisherActor.Setup("rmq.test.akka.publisher"));
 
@@ -51,10 +51,6 @@ namespace Akka.Tests
             senderActor.Tell(new[] { 3 });
             senderActor.Tell("4");
             senderActor.Tell(new[] { "5" });
-
-            probe.ExpectMsg<MQPublisherActor.Created>(30.Seconds());
-
-            senderActor.Tell(new MQPublisherActor.Setup("rmq.test.akka.publisher"));
 
             receiverActor.Tell(new MQReceiverActor.Setup("rmq.test.akka.publisher"));
 

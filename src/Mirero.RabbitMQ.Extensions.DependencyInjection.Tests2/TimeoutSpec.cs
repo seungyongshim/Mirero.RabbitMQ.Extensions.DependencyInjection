@@ -43,7 +43,7 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection.Tests2
 
                 using (var channel = host.Services.GetService<IMQPublisher>())
                 {
-                    channel.Tell(topicName, 1);
+                    await channel.Tell(topicName, 1);
                 }
 
                 var (result,commit) = await receiver.ReceiveAsync<int>(2.Seconds());

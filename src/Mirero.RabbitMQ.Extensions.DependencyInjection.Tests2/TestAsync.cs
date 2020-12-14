@@ -30,10 +30,10 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection.Tests2
 
             using (var channel = host.Services.GetService<IMQPublisher>())
             {
-                channel.Tell("mls.test.testservice", new[] { "Hello", "World" });
-                channel.Tell("mls.test.testservice", new TestMessage("Hello"));
-                channel.Tell("mls.test.testservice", new TestMessage("World"));
-                channel.Tell("mls.test.testservice", 1);
+                await channel.Tell("mls.test.testservice", new[] { "Hello", "World" });
+                await channel.Tell("mls.test.testservice", new TestMessage("Hello"));
+                await channel.Tell("mls.test.testservice", new TestMessage("World"));
+                await channel.Tell("mls.test.testservice", 1);
             }
 
             using (var receiver = host.Services.GetService<IMQReceiver>())
