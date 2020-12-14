@@ -7,6 +7,6 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection.Abstractions
     {
         Task<(object, ICommitable)> ReceiveAsync(TimeSpan timeout);
         Task<(T, ICommitable)> ReceiveAsync<T>(TimeSpan timeout);
-        void Start(string topic);
+        void StartListening(string topic);
     }
 }

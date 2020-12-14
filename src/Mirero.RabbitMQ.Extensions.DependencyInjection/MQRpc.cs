@@ -1,38 +1,40 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
 using Mirero.RabbitMQ.Extensions.DependencyInjection.Abstractions;
 
 namespace Mirero.RabbitMQ.Extensions.DependencyInjection
 {
     public class MQRpc : IMQRpc
     {
-        public MQRpc(IMQPublisher sender, IMQReceiver receiver, ILogger<MQRpc> logger)
+        public MQRpc(IServiceProvider serviceProvider, IMQPublisher sender, ILogger<MQRpc> logger)
         {
+            ServiceProvider = serviceProvider;
             Sender = sender;
-            Receiver = receiver;
             Logger = logger;
         }
 
+        public IServiceProvider ServiceProvider { get; }
         public IMQPublisher Sender { get; }
-        public IMQReceiver Receiver { get; }
         public ILogger<MQRpc> Logger { get; }
 
-        
+        public async Task<(T, ICommitable)> AskAsync<T>(string topic, object message, TimeSpan timeout)
+        {
+            var resQueueName = await Sender.Tell(topic, message, true);
+
+            using (var receiver = ServiceProvider.GetService<IMQReceiver>())
+            {
+                receiver.StartListening(resQueueName);
+                return await receiver.ReceiveAsync<T>(timeout);
+            }
+        }
+
         #region IDisposable Support
+
         private bool disposedValue = false; // 중복 호출을 검색하려면
 
-        public Task<object> ReceiveAsync(TimeSpan timeout)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<T> AskAsync<T>(string topic, object message, TimeSpan timeout)
-        {
-            throw new NotImplementedException();
-        }
+        public void Dispose() => Dispose(true);
 
         protected virtual void Dispose(bool disposing)
         {
@@ -41,20 +43,12 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
                 if (disposing)
                 {
                     Sender.Dispose();
-                    Receiver.Dispose();
                 }
 
                 disposedValue = true;
             }
         }
 
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-       
-        #endregion
+        #endregion IDisposable Support
     }
 }

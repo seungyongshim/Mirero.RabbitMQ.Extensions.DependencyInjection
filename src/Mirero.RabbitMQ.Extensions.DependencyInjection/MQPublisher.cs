@@ -11,7 +11,7 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
 
     public class MQPublisher : IMQPublisher
     {
-        public MQPublisher(IServiceProvider serviceProvider, IMQChannel channel, ILogger<MQPublisher> logger )
+        public MQPublisher(IMQChannel channel, ILogger<MQPublisher> logger )
         {
             Logger = logger;
             Channel = channel;
@@ -20,20 +20,12 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
         public ILogger<MQPublisher> Logger { get; }
         public IMQChannel Channel { get; }
 
-        public Task Tell(string topic, object message)
+        public async Task<string> Tell(string topic, object message, bool expectResponse = false)
         {
-            try
-            {
-                var body = Encoding.UTF8.GetBytes(JsonSerialize(message));
-                Channel.BasicQueuePublish(topic, body);
-                return Task.CompletedTask;
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "");
-                return Task.FromException(ex);
-            }
-
+            var body = Encoding.UTF8.GetBytes(JsonSerialize(message));
+            var ret = Channel.BasicQueuePublish(topic, body, expectResponse);
+            return await Task.FromResult(ret);
+            
             string JsonSerialize(object msg)
             {
                 var result = JsonConvert.SerializeObject(msg, Formatting.Indented, new JsonSerializerSettings

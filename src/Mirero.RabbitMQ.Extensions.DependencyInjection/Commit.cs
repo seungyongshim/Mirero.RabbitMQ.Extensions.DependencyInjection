@@ -6,12 +6,14 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
 {
     public class Commit : ICommitable
     {
-        public Commit(ulong deliveryTag, Func<ulong, Task> ackAction, Func<ulong, Task> nackAction)
+        public Commit(ulong deliveryTag, string replyTo, Func<ulong, Task> ackAction, Func<ulong, Task> nackAction)
         {
             AckAction = () => ackAction(deliveryTag);
             NackAction = () => nackAction(deliveryTag);
+            ReplyTo = replyTo;
         }
 
+        public string ReplyTo { get; }
         private Func<Task> AckAction { get; }
         private Func<Task> NackAction { get; }
 

@@ -5,6 +5,6 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection.Abstractions
 
     public interface IMQPublisher : IDisposable
     {
-        Task Tell(string topic, object message);
+        Task<string> Tell(string topic, object message, bool expectResponse = false);
     }
 }

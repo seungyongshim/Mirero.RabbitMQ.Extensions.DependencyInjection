@@ -38,7 +38,7 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection.Tests2
 
             using (var receiver = host.Services.GetService<IMQReceiver>())
             {
-                receiver.Start("mls.test.testservice");
+                receiver.StartListening("mls.test.testservice");
 
                 {
                     var (message, commit) = await receiver.ReceiveAsync<IEnumerable<string>>(2.Seconds());

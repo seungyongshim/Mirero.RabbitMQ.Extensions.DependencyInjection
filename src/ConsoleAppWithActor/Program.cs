@@ -14,10 +14,7 @@ namespace ConsoleAppWithActor
                 {
                     var actorSystem = Akka.Actor.ActorSystem.Create("actorSystem");
 
-                    services.AddAkka(actorSystem, new[]
-                    {
-                        "ConsoleAppWithActor",
-                    });
+                    services.AddAkka(actorSystem);
                     services.AddRabbitMQ(model =>
                     {
                         model.QueueDelete("rmq.test.akka.publisher", false, false);

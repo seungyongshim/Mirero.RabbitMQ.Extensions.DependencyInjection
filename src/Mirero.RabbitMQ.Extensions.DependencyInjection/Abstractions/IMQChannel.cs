@@ -5,7 +5,7 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection.Abstractions
 
     public interface IMQChannel : IDisposable
     {
-        void BasicQueuePublish(string topic, byte[] body);
+        string BasicQueuePublish(string topic, byte[] body, bool expectResponce = false);
     }
 
 }

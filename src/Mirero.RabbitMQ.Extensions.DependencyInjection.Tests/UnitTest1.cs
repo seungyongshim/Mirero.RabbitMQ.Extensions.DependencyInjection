@@ -39,7 +39,7 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection.Tests
             using (var receiver = host.Services.GetService<IMQReceiver>())
             using (var cts = new CancellationTokenSource())
             {
-                receiver.Start("rmq.test.test1");
+                receiver.StartListening("rmq.test.test1");
                 var (message, commit)= await receiver.ReceiveAsync<string>(5.Seconds());
                 message.Should().Be("Hello");
                 await commit.Ack();

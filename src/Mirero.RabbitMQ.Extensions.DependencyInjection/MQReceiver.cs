@@ -26,7 +26,7 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
         public IModel Model { get; }
         public Action Unsubscribe { get; private set; } = () => { };
         public bool IsStarted { get; private set; } = false;
-        public Channel<(string, ulong)> InnerQueue { get; private set; }
+        public Channel<(string, ulong, IBasicProperties)> InnerQueue { get; private set; }
 
         public async Task<(object, ICommitable)> ReceiveAsync(TimeSpan timeout) =>
             await ReceiveAsync<object>(timeout);
@@ -39,9 +39,9 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
 
                 try
                 {
-                    var (rawMessage, tag) = await InnerQueue.Reader.ReadAsync(cts.Token).ConfigureAwait(false);
+                    var (rawMessage, tag, properties) = await InnerQueue.Reader.ReadAsync(cts.Token).ConfigureAwait(false);
 
-                    commit = new Commit(tag, Ack, Nack);
+                    commit = new Commit(tag, properties.ReplyTo, Ack, Nack);
 
                     var result = JsonConvert.DeserializeObject<T>(rawMessage, new JsonSerializerSettings
                     {
@@ -64,14 +64,14 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
         /// http://wish.mirero.co.kr/mirero/project/mls/1.0/h18-mirero-mls10-rd/mls-application/-/issues/1649#note_178824
         /// </summary>
         /// <param name="topic"></param>
-        public void Start(string topic)
+        public void StartListening(string topic)
         {
             if (IsStarted)
             {
                 return;
             }
 
-            InnerQueue = Channel.CreateUnbounded<(string, ulong)>();
+            InnerQueue = Channel.CreateUnbounded<(string, ulong, IBasicProperties)>();
             var consumer = new AsyncEventingBasicConsumer(Model);
             consumer.Received += Consumer_Received;
             Unsubscribe = () => consumer.Received -= Consumer_Received;
@@ -85,7 +85,7 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
                 {
                     //.Net5 전환시 ToArray를 Span으로 수정할 것
                     var rawMessage = Encoding.UTF8.GetString(e.Body.ToArray());
-                    await InnerQueue.Writer.WriteAsync((rawMessage, e.DeliveryTag)).ConfigureAwait(false);
+                    await InnerQueue.Writer.WriteAsync((rawMessage, e.DeliveryTag, e.BasicProperties)).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
@@ -110,11 +110,7 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
 
         private bool disposedValue = false; // 중복 호출을 검색하려면
 
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
+        public void Dispose() => Dispose(true);
 
         protected virtual void Dispose(bool disposing)
         {

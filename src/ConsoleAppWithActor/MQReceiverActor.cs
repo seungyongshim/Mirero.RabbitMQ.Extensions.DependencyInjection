@@ -2,7 +2,6 @@ namespace ConsoleAppWithActor
 {
     using System;
     using System.Threading.Tasks;
-    using System.Windows.Input;
     using Akka.Actor;
     using Akka.Event;
     using Mirero.RabbitMQ.Extensions.DependencyInjection.Abstractions;
@@ -25,7 +24,7 @@ namespace ConsoleAppWithActor
 
         private void Handle(Setup msg)
         {
-            MQReceiver.Start(msg.Topic);
+            MQReceiver.StartListening(msg.Topic);
             Become(RegisterMessageHandlers);
 
             Stash.UnstashAll();
@@ -37,7 +36,7 @@ namespace ConsoleAppWithActor
             var self = Context.Self;
 
             var (ret, commit) = await MQReceiver.ReceiveAsync(TimeSpan.FromSeconds(30)).ConfigureAwait(false);
-            var ack = await parent.Ask<ICommand>(new Received(ret), TimeSpan.FromSeconds(30)).ConfigureAwait(false);
+            var ack = await parent.Ask<IAckCommand>(new Received(ret), TimeSpan.FromSeconds(30)).ConfigureAwait(false);
 
             ack.Execute(commit);
 
@@ -50,23 +49,20 @@ namespace ConsoleAppWithActor
             Self.Tell(new Read());
         }
 
-        public class Ack : ICommand
+        interface IAckCommand
         {
-            public event EventHandler CanExecuteChanged;
+            void Execute(object parameter);
+        }
 
-            public bool CanExecute(object parameter) => throw new NotImplementedException();
-
+        public class Ack : IAckCommand
+        {
             public void Execute(object parameter) => (parameter as ICommitable).Ack();
         }
 
         public class Created { }
 
-        public class Nack : ICommand
+        public class Nack : IAckCommand
         {
-            public event EventHandler CanExecuteChanged;
-
-            public bool CanExecute(object parameter) => throw new NotImplementedException();
-
             public void Execute(object parameter) => (parameter as ICommitable).Nack();
         }
 

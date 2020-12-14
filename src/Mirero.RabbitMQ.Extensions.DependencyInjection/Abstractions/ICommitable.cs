@@ -4,6 +4,8 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection.Abstractions
 
     public interface ICommitable
     {
+        string ReplyTo { get; }
+
         Task Ack();
 
         Task Nack();

@@ -29,10 +29,23 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
         public IModel Model { get; }
         public IBasicProperties Props { get; private set; }
 
-        public void BasicQueuePublish(string topic, byte[] body)
+        public string BasicQueuePublish(string topic, byte[] body, bool expectResponce = false)
         {
-            Model.BasicPublish("", topic, Props, body);
+            if (expectResponce)
+            {
+                var reply = Model.QueueDeclare().QueueName;
+                Props.ReplyTo = reply;
+                Model.BasicPublish("", topic, Props, body);
+                return reply;
+            }
+            else
+            {
+                Props.ReplyTo = string.Empty;
+                Model.BasicPublish("", topic, Props, body);
+                return string.Empty;
+            }
         }
+
         #region IDisposable Support
 
         private bool disposedValue = false; // 중복 호출을 검색하려면

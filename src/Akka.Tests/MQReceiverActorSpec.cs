@@ -19,11 +19,7 @@ namespace Akka.Tests
             var host = Host.CreateDefaultBuilder()
                            .ConfigureServices(services =>
                            {
-                               services.AddAkka(Sys, new[]
-                               {
-                                   "Actor.Tests",
-                                   "ConsoleAppWithActor",
-                               });
+                               services.AddAkka(Sys);
                                services.AddRabbitMQ(model =>
                                {
                                    model.QueueDelete("rmq.test.akka.publisher", false, false);
@@ -34,11 +30,9 @@ namespace Akka.Tests
 
             await host.StartAsync();
 
-            host.Services.GetRequiredService<ActorSystem>();
-
             var probe = CreateTestProbe("probe");
 
-            var receiverActor = probe.ChildActorOf(Sys.DI().PropsFactory<MQReceiverActor>().Create(), "ReceiverActor1");
+            var receiverActor = probe.ChildActorOf(Sys.DI().PropsFactory<MQReceiverActor>().Create(), "ReceiverActor");
             probe.ExpectMsg<MQReceiverActor.Created>(3.Seconds());
 
             var senderActor = probe.ChildActorOf(Sys.DI().PropsFactory<MQPublisherActor>().Create(), "SenderActor");
@@ -85,9 +79,6 @@ namespace Akka.Tests
             await host.StopAsync();
         }
 
-        public class Hello
-        {
-            public bool IsMakeException { get; set; } = true;
-        }
+        public class Hello { }
     }
 }

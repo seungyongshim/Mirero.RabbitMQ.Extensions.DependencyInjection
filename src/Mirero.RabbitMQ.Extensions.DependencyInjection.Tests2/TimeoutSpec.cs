@@ -34,7 +34,7 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection.Tests2
 
             using (var receiver = host.Services.GetService<IMQReceiver>())
             {
-                receiver.Start(topicName);
+                receiver.StartListening(topicName);
 
                 Func<Task> throwExceptionAsync = async () => await receiver.ReceiveAsync<int>(2.Seconds());
 
