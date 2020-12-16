@@ -101,6 +101,7 @@ namespace GeneralHost.Tests
             }
 
             await host.StopAsync(1.Seconds());
+            await Task.Delay(500);
         }
     }
 }

@@ -74,6 +74,7 @@ namespace GeneralHost.Tests
             res.Guid.Should().Be(messageFixture.Guid);
 
             await host.StopAsync();
+            await Task.Delay(500);
         }
     }
 }
