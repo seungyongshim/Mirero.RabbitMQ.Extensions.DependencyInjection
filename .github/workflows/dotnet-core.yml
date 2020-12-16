@@ -32,4 +32,4 @@ jobs:
     - name: Test
       run: |
         cd src
-        dotnet test --no-restore
+        dotnet test -v q --no-restore
