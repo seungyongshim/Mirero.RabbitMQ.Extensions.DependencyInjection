@@ -29,9 +29,6 @@ jobs:
       run: |
         cd src
         dotnet build --configuration Debug --no-restore
-        cp ./test.hocon ./Actor.Tests/bin/Debug/net5
-        cp ./test.hocon ./AspNetCore.Tests/bin/Debug/net5
-        cp ./test.hocon ./GeneralHost.Tests/bin/Debug/net5
     - name: Test
       run: |
         cd src

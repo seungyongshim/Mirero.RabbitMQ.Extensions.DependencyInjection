@@ -1,0 +1,7 @@
+rabbitmq.connection
+{
+	hostname = "127.0.0.1"
+	vhost = "/rabbitmq"
+	username = "mirero"
+	password = "system"
+}
