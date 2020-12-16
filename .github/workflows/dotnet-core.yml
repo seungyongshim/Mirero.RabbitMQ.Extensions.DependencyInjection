@@ -8,9 +8,8 @@ on:
 
 jobs:
   Build-and-Tests:
-
+    name: Build and Test 
     runs-on: ubuntu-18.04
-
     steps:
     - uses: actions/checkout@v2
     - name: running rabbitmq
