@@ -1,11 +1,11 @@
+using System;
+using System.Threading.Tasks;
+using Akka.Actor;
+using Akka.Event;
+using Mirero.RabbitMQ.Extensions.DependencyInjection.Abstractions;
+
 namespace ConsoleAppWithActor
 {
-    using System;
-    using System.Threading.Tasks;
-    using Akka.Actor;
-    using Akka.Event;
-    using Mirero.RabbitMQ.Extensions.DependencyInjection.Abstractions;
-
     public class MQReceiverActor : ReceiveActor, IWithUnboundedStash
     {
         public MQReceiverActor(IMQReceiver mqReceiver)
@@ -15,6 +15,11 @@ namespace ConsoleAppWithActor
             Receive<Setup>(Handle, null);
             ReceiveAny(_ => Stash.Stash());
             Context.Parent.Tell(new Created());
+        }
+
+        private interface IAckCommand
+        {
+            void Execute(object parameter);
         }
 
         public IMQReceiver MQReceiver { get; }
@@ -47,11 +52,6 @@ namespace ConsoleAppWithActor
         {
             ReceiveAsync<Read>(HandleAsync);
             Self.Tell(new Read());
-        }
-
-        interface IAckCommand
-        {
-            void Execute(object parameter);
         }
 
         public class Ack : IAckCommand

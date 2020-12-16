@@ -1,12 +1,13 @@
+using System;
+using RabbitMQ.Client;
+using Microsoft.Extensions.Options;
+using Mirero.RabbitMQ.Extensions.DependencyInjection.Options;
+
 namespace Mirero.RabbitMQ.Extensions.DependencyInjection
 {
-    using System;
-    using global::RabbitMQ.Client;
-    using Microsoft.Extensions.Options;
-
     public class MQConnection : IDisposable
     {
-        public MQConnection(MQDeclares mqDeclares, IOptions<MQConnectionOption> options)
+        public MQConnection(MQDeclares mqDeclares, IOptions<MQConnectionOptions> options)
         {
             MQDeclares = mqDeclares;
             MQConnectionOption = options.Value;
@@ -14,17 +15,17 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
 
         public IConnection Connection { get; private set; }
         public MQDeclares MQDeclares { get; }
-        public MQConnectionOption MQConnectionOption { get; }
+        public MQConnectionOptions MQConnectionOption { get; }
 
         public void Connect()
         {
             var factory = new ConnectionFactory()
             {
-                UseBackgroundThreadsForIO = MQConnectionOption.UseBackgroundThreadsForIO,
+                UseBackgroundThreadsForIO = true,
                 AutomaticRecoveryEnabled = true,
-                VirtualHost = "/",
-                UserName = "mirero",
-                Password = "system",
+                VirtualHost = MQConnectionOption.Vhost,
+                UserName = MQConnectionOption.Username,
+                Password = MQConnectionOption.Password,
                 NetworkRecoveryInterval = TimeSpan.FromSeconds(5),
                 DispatchConsumersAsync = true,
             };

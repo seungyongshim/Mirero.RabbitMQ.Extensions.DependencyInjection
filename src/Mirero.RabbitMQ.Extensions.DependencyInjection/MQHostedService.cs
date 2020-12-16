@@ -1,11 +1,10 @@
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+
 namespace Mirero.RabbitMQ.Extensions.DependencyInjection
 {
-    using System.Threading;
-    using System.Threading.Tasks;
-    using Microsoft.Extensions.Hosting;
-    using Microsoft.Extensions.Logging;
-
-
     public class MQHostedService : IHostedService
     {
         public MQHostedService(MQConnection rabbitMQConnection, ILogger<MQHostedService> logger)

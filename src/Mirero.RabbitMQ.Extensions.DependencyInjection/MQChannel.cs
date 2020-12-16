@@ -33,7 +33,6 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
 
         public string BasicQueuePublish(string topic, byte[] body, bool expectResponce = false)
         {
-            Model.QueueDeclare(topic, false, false, false, null);
             if (expectResponce)
             {
                 var reply = Model.QueueDeclare().QueueName;

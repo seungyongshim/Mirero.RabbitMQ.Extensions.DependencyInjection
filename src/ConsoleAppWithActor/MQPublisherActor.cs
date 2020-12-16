@@ -1,11 +1,11 @@
+using System;
+using System.Threading.Tasks;
+using Akka.Actor;
+using Akka.Event;
+using Mirero.RabbitMQ.Extensions.DependencyInjection.Abstractions;
+
 namespace ConsoleAppWithActor
 {
-    using System;
-    using System.Threading.Tasks;
-    using Akka.Actor;
-    using Akka.Event;
-    using Mirero.RabbitMQ.Extensions.DependencyInjection.Abstractions;
-
     public class MQPublisherActor : ReceiveActor, IWithUnboundedStash
     {
         private readonly ILoggingAdapter Logger = Context.GetLogger();
@@ -46,7 +46,7 @@ namespace ConsoleAppWithActor
             Stash.UnstashAll();
         }
 
-        private async Task HandleAsync(object msg) => await MQPublisher.Tell(Topic, msg);
+        private async Task HandleAsync(object msg) => await MQPublisher.TellAsync(Topic, msg);
 
         private void RegisterMessageHandlers() => ReceiveAsync<object>(HandleAsync);
 

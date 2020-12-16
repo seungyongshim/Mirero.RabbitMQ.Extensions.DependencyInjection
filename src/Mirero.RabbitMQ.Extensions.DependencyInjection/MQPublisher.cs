@@ -1,12 +1,12 @@
+using System.Text;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Mirero.RabbitMQ.Extensions.DependencyInjection.Abstractions;
+using Mirero.RabbitMQ.Extensions.DependencyInjection.Common;
+using Newtonsoft.Json;
+
 namespace Mirero.RabbitMQ.Extensions.DependencyInjection
 {
-    using System.Text;
-    using System.Threading.Tasks;
-    using Microsoft.Extensions.Logging;
-    using Mirero.RabbitMQ.Extensions.DependencyInjection.Abstractions;
-    using Mirero.RabbitMQ.Extensions.DependencyInjection.Common;
-    using Newtonsoft.Json;
-
     public class MQPublisher : IMQPublisher
     {
         public MQPublisher(IMQChannel channel, ILogger<MQPublisher> logger)
@@ -18,7 +18,7 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
         public ILogger<MQPublisher> Logger { get; }
         public IMQChannel Channel { get; }
 
-        public async Task<string> Tell(string topic, object message, bool expectResponse = false)
+        public async Task<string> TellAsync(string topic, object message, bool expectResponse = false)
         {
             var body = Encoding.UTF8.GetBytes(JsonSerialize(message));
             var ret = Channel.BasicQueuePublish(topic, body, expectResponse);

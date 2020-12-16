@@ -10,18 +10,18 @@ namespace ConsoleAppWithActor
         static void Main(string[] args)
         {
             var host = Host.CreateDefaultBuilder()
-                .ConfigureServices(services =>
-                {
-                    var actorSystem = Akka.Actor.ActorSystem.Create("actorSystem");
-
-                    services.AddAkka(actorSystem);
-                    services.AddRabbitMQ(model =>
-                    {
-                        model.QueueDelete("rmq.test.akka.publisher", false, false);
-                        model.QueueDeclare("rmq.test.akka.publisher", false, false, false, null);
-                    });
-                })
-                .Build();
+                           .ConfigureServices(services =>
+                           {
+                               var actorSystem = Akka.Actor.ActorSystem.Create("actorSystem");
+                           
+                               services.AddAkka(actorSystem);
+                               services.AddRabbitMQ(model =>
+                               {
+                                   model.QueueDelete("rmq.test.akka.publisher", false, false);
+                                   model.QueueDeclare("rmq.test.akka.publisher", false, false, false, null);
+                               });
+                           })
+                           .Build();
         }
     }
 }

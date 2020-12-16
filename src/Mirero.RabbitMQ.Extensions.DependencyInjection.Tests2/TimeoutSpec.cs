@@ -1,34 +1,36 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using FluentAssertions;
 using FluentAssertions.Extensions;
+using Hocon.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Mirero.RabbitMQ.Extensions.DependencyInjection.Abstractions;
 using Xunit;
 
-namespace Mirero.RabbitMQ.Extensions.DependencyInjection.Tests2
+namespace GeneralHost.Tests
 {
     public class TimeoutSpec
     {
         [Fact]
         public async Task TimeoutTestAsync()
         {
-            const string topicName = "mls.test.TimeoutSpec";
+            const string topicName = "mls.test.time-out";
 
             var host = Host.CreateDefaultBuilder()
-                               .ConfigureServices(services =>
+                           .ConfigureAppConfiguration(config =>
+                           {
+                               config.AddHoconFile("test.hocon");
+                           })
+                           .ConfigureServices((context, services) =>
+                           {
+                               services.AddRabbitMQ(context.Configuration, model =>
                                {
-                                   services.AddRabbitMQ(model =>
-                                   {
-                                       model.QueueDelete(topicName, false, false);
-                                       model.QueueDeclare(topicName, false, false, false, null);
-                                   });
-                               })
-                               .Build();
+                                   model.QueueDelete(topicName, false, false);
+                                   model.QueueDeclare(topicName, false, false, false, null);
+                               });
+                           })
+                           .Build();
 
             await host.StartAsync();
 
@@ -36,20 +38,9 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection.Tests2
             {
                 receiver.StartListening(topicName);
 
+                // Message가 없을 때 수신을 시도하는 경우 
                 Func<Task> throwExceptionAsync = async () => await receiver.ReceiveAsync<int>(2.Seconds());
-
-                await throwExceptionAsync.Should()
-                                         .ThrowAsync<OperationCanceledException>();
-
-                using (var channel = host.Services.GetService<IMQPublisher>())
-                {
-                    await channel.Tell(topicName, 1);
-                }
-
-                var (result,commit) = await receiver.ReceiveAsync<int>(2.Seconds());
-
-                result.Should().Be(1);
-                await commit.Ack();
+                await throwExceptionAsync.Should().ThrowAsync<OperationCanceledException>();
             }
 
             await host.StopAsync();

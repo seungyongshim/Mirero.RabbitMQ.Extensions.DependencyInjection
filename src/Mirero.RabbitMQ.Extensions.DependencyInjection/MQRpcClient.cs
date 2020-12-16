@@ -21,7 +21,7 @@ namespace Mirero.RabbitMQ.Extensions.DependencyInjection
 
         public async Task<(T, ICommitable)> AskAsync<T>(string topic, object message, TimeSpan timeout)
         {
-            var resQueueName = await Sender.Tell(topic, message, true);
+            var resQueueName = await Sender.TellAsync(topic, message, true);
 
             using (var receiver = ServiceProvider.GetService<IMQReceiver>())
             {

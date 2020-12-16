@@ -6,7 +6,9 @@ using ConsoleAppWithActor;
 using FluentAssertions;
 using FluentAssertions.Extensions;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using Hocon.Extensions.Configuration;
 using Xunit;
 
 namespace Akka.Tests
@@ -17,10 +19,15 @@ namespace Akka.Tests
         public async Task Test1()
         {
             var host = Host.CreateDefaultBuilder()
-                           .ConfigureServices(services =>
+                           .ConfigureHostConfiguration(config =>
+                           {
+                               config.AddHoconFile("test.hocon");
+                           })
+                           .ConfigureServices((context,services) =>
                            {
                                services.AddAkka(Sys);
-                               services.AddRabbitMQ(model =>
+
+                               services.AddRabbitMQ(context.Configuration, model =>
                                {
                                    model.QueueDelete("rmq.test.akka.publisher", false, false);
                                    model.QueueDeclare("rmq.test.akka.publisher", false, false, false, null);
@@ -30,7 +37,7 @@ namespace Akka.Tests
 
             await host.StartAsync();
 
-            var probe = CreateTestProbe("probe");
+            var probe = CreateTestProbe();
 
             var receiverActor = probe.ChildActorOf(Sys.DI().PropsFactory<MQReceiverActor>().Create(), "ReceiverActor");
             probe.ExpectMsg<MQReceiverActor.Created>(3.Seconds());
