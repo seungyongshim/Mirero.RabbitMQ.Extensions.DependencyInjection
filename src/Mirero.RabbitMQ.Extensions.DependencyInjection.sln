@@ -5,11 +5,11 @@ VisualStudioVersion = 16.0.30804.86
 MinimumVisualStudioVersion = 15.0.26124.0
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mirero.RabbitMQ.Extensions.DependencyInjection", "Mirero.RabbitMQ.Extensions.DependencyInjection\Mirero.RabbitMQ.Extensions.DependencyInjection.csproj", "{1637F35A-CB65-46CB-B7B7-65E64BC48760}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AspNetCore.Tests", "Mirero.RabbitMQ.Extensions.DependencyInjection.Tests\AspNetCore.Tests.csproj", "{95DBFF5C-1F23-4663-9792-FF29F5D430CC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AspNetCore.Tests", "AspNetCore.Tests\AspNetCore.Tests.csproj", "{95DBFF5C-1F23-4663-9792-FF29F5D430CC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GeneralHost.Tests", "Mirero.RabbitMQ.Extensions.DependencyInjection.Tests2\GeneralHost.Tests.csproj", "{F3E9D040-61D9-404E-8969-77F2F3F8FE22}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GeneralHost.Tests", "GeneralHost.Tests\GeneralHost.Tests.csproj", "{F3E9D040-61D9-404E-8969-77F2F3F8FE22}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Actor.Tests", "Akka.Tests\Actor.Tests.csproj", "{A7869B9C-108F-4784-A8B1-3884B0558420}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Actor.Tests", "Actor.Tests\Actor.Tests.csproj", "{A7869B9C-108F-4784-A8B1-3884B0558420}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleAppWithActor", "ConsoleAppWithActor\ConsoleAppWithActor.csproj", "{68DE80D4-CF03-4066-A6BB-C00EEBEC4676}"
 EndProject
