@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  Build and Tests:
+  Build_and_Tests:
 
     runs-on: ubuntu-18.04
 
