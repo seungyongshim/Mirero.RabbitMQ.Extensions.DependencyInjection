@@ -30,7 +30,7 @@ namespace AspNetCore.Tests
                                      config.AddHoconFile("test.hocon");
                                  })
                                  .UseStartup<Startup>()
-                                 .UseKestrel(option => option.Listen(IPAddress.IPv6Loopback, 0))
+                                 .UseKestrel(option => option.Listen(IPAddress.Loopback, 0))
                                  .ConfigureServices((context, services) =>
                                  {
                                      services.AddRabbitMQ(context.Configuration, model =>
