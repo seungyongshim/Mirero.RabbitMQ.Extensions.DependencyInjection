@@ -18,6 +18,8 @@ namespace Akka.Tests
         [Fact]
         public async Task Test1()
         {
+            const string topicName = "rmq.test.akka";
+
             var host = Host.CreateDefaultBuilder()
                            .ConfigureHostConfiguration(config =>
                            {
@@ -29,8 +31,8 @@ namespace Akka.Tests
 
                                services.AddRabbitMQ(context.Configuration, model =>
                                {
-                                   model.QueueDelete("rmq.test.akka.publisher", false, false);
-                                   model.QueueDeclare("rmq.test.akka.publisher", false, false, false, null);
+                                   model.QueueDelete(topicName, false, false);
+                                   model.QueueDeclare(topicName, false, false, false, null);
                                });
                            })
                            .Build();
@@ -45,7 +47,7 @@ namespace Akka.Tests
             var senderActor = probe.ChildActorOf(Sys.DI().PropsFactory<MQPublisherActor>().Create(), "SenderActor");
             probe.ExpectMsg<MQPublisherActor.Created>(3.Seconds());
 
-            senderActor.Tell(new MQPublisherActor.Setup("rmq.test.akka.publisher"));
+            senderActor.Tell(new MQPublisherActor.Setup(topicName));
 
             senderActor.Tell("1");
             senderActor.Tell(new Hello());
@@ -53,7 +55,7 @@ namespace Akka.Tests
             senderActor.Tell("4");
             senderActor.Tell(new[] { "5" });
 
-            receiverActor.Tell(new MQReceiverActor.Setup("rmq.test.akka.publisher"));
+            receiverActor.Tell(new MQReceiverActor.Setup(topicName));
 
             probe.ExpectMsg<MQReceiverActor.Received>((m, s) =>
             {
