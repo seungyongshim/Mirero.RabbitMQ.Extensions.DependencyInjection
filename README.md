@@ -4,7 +4,7 @@
 - https://github.com/rabbitmq/rabbitmq-dotnet-client/issues/970
 
 ## Configuration Hocon
-```json
+```
 rabbitmq.connection
 {
 	hostname = "127.0.0.1"
