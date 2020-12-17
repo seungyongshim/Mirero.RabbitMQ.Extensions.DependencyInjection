@@ -30,7 +30,7 @@ namespace AspNetCore.Tests
                                      config.AddHoconFile("test.hocon");
                                  })
                                  .UseStartup<Startup>()
-                                 .UseKestrel(option => option.Listen(IPAddress.Loopback, 0))
+                                 .UseKestrel(option => option.Listen(IPAddress.IPv6Loopback, 0))
                                  .ConfigureServices((context, services) =>
                                  {
                                      services.AddRabbitMQ(context.Configuration, model =>
@@ -45,13 +45,11 @@ namespace AspNetCore.Tests
             await host.StartAsync();
 
             using (var sender = host.Services.GetService<IMQPublisher>())
-            using (var cts = new CancellationTokenSource())
             {
                 await sender.TellAsync(topicName, messageFixture);
             }
 
             using (var receiver = host.Services.GetService<IMQReceiver>())
-            using (var cts = new CancellationTokenSource())
             {
                 receiver.StartListening(topicName);
                 var (message, commit) = await receiver.ReceiveAsync<string>(5.Seconds());

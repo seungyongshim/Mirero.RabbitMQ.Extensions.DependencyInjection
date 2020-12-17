@@ -1,8 +1,10 @@
+![CI](https://github.com/seungyongshim/Mirero.RabbitMQ.Extensions.DependencyInjection/workflows/CI/badge.svg)
+
 ## Innovation
 - https://github.com/rabbitmq/rabbitmq-dotnet-client/issues/970
 
 ## Configuration Hocon
-```json
+```
 rabbitmq.connection
 {
 	hostname = "127.0.0.1"
