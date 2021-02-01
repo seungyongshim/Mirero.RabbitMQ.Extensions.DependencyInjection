@@ -16,7 +16,7 @@ namespace Akka.Tests
     public class MQReceiverActorSpec 
     {
         [Fact]
-        public async Task Test1()
+        public async Task TestWithAkka()
         {
             const string topicName = "rmq.test.akka";
 
