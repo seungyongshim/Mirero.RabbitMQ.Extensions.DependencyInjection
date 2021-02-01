@@ -1,19 +1,19 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Akka.Actor;
-using Akka.DI.Core;
 using ConsoleAppWithActor;
 using FluentAssertions;
 using FluentAssertions.Extensions;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Hocon.Extensions.Configuration;
 using Xunit;
+using Mirero.Akka.Extensions.DependencyInjection;
+using Akka.DependencyInjection;
 
 namespace Akka.Tests
 {
-    public class MQReceiverActorSpec : TestKit.Xunit2.TestKit
+    public class MQReceiverActorSpec 
     {
         [Fact]
         public async Task Test1()
@@ -27,7 +27,11 @@ namespace Akka.Tests
                            })
                            .ConfigureServices((context,services) =>
                            {
-                               services.AddAkka(Sys);
+                               services.AddSingleton(sp =>
+                                   new Akka.TestKit.Xunit2.TestKit(BootstrapSetup.Create()
+                                                     .And(ServiceProviderSetup.Create(sp))));
+
+                               services.AddSingleton(sp => sp.GetService<Akka.TestKit.Xunit2.TestKit>().Sys);
 
                                services.AddRabbitMQ(context.Configuration, model =>
                                {
@@ -35,16 +39,21 @@ namespace Akka.Tests
                                    model.QueueDeclare(topicName, false, false, false, null);
                                });
                            })
+                           .UseAkka(sys =>
+                           {
+
+                           })
                            .Build();
 
             await host.StartAsync();
+            var testKit = host.Services.GetService<Akka.TestKit.Xunit2.TestKit>();
 
-            var probe = CreateTestProbe();
+            var probe = testKit.CreateTestProbe();
 
-            var receiverActor = probe.ChildActorOf(Sys.DI().PropsFactory<MQReceiverActor>().Create(), "ReceiverActor");
+            var receiverActor = probe.ChildActorOf(testKit.Sys.PropsFactory<MQReceiverActor>().Create(), "ReceiverActor");
             probe.ExpectMsg<MQReceiverActor.Created>(3.Seconds());
 
-            var senderActor = probe.ChildActorOf(Sys.DI().PropsFactory<MQPublisherActor>().Create(), "SenderActor");
+            var senderActor = probe.ChildActorOf(testKit.Sys.PropsFactory<MQPublisherActor>().Create(), "SenderActor");
             probe.ExpectMsg<MQPublisherActor.Created>(3.Seconds());
 
             senderActor.Tell(new MQPublisherActor.Setup(topicName));
