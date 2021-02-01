@@ -48,15 +48,8 @@ namespace Akka.Tests
             await host.StartAsync();
             var testKit = host.Services.GetService<Akka.TestKit.Xunit2.TestKit>();
 
-            var probe = testKit.CreateTestProbe();
-
-            var receiverActor = probe.ChildActorOf(testKit.Sys.PropsFactory<MQReceiverActor>().Create(), "ReceiverActor");
-            probe.ExpectMsg<MQReceiverActor.Created>(3.Seconds());
-
-            var senderActor = probe.ChildActorOf(testKit.Sys.PropsFactory<MQPublisherActor>().Create(), "SenderActor");
-            probe.ExpectMsg<MQPublisherActor.Created>(3.Seconds());
-
-            senderActor.Tell(new MQPublisherActor.Setup(topicName));
+            var receiverActor = testKit.ActorOf(testKit.Sys.PropsFactory<MQReceiverActor>().Create(topicName, testKit.TestActor), "ReceiverActor");
+            var senderActor = testKit.ActorOf(testKit.Sys.PropsFactory<MQPublisherActor>().Create(topicName), "SenderActor");
 
             senderActor.Tell("1");
             senderActor.Tell(new Hello());
@@ -64,21 +57,19 @@ namespace Akka.Tests
             senderActor.Tell("4");
             senderActor.Tell(new[] { "5" });
 
-            receiverActor.Tell(new MQReceiverActor.Setup(topicName));
-
-            probe.ExpectMsg<MQReceiverActor.Received>((m, s) =>
+            testKit.ExpectMsg<MQReceiverActor.Received>((m, s) =>
             {
                 m.Message.As<string>().Should().Be("1");
                 s.Tell(new MQReceiverActor.Ack());
             }, 5.Seconds());
 
-            probe.ExpectMsg<MQReceiverActor.Received>((m, s) =>
+            testKit.ExpectMsg<MQReceiverActor.Received>((m, s) =>
             {
                 m.Message.As<Hello>();
                 s.Tell(new MQReceiverActor.Ack());
             });
 
-            probe.ExpectMsg<MQReceiverActor.Received>((m, s) =>
+            testKit.ExpectMsg<MQReceiverActor.Received>((m, s) =>
             {
                 m.Message.As<IEnumerable<int>>()
                          .Should()
@@ -86,7 +77,7 @@ namespace Akka.Tests
                 s.Tell(new MQReceiverActor.Nack());
             });
 
-            probe.ExpectMsg<MQReceiverActor.Received>((m, s) =>
+            testKit.ExpectMsg<MQReceiverActor.Received>((m, s) =>
             {
                 m.Message.As<IEnumerable<int>>()
                          .Should()
